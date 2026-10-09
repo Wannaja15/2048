@@ -69,6 +69,77 @@ jobs:
 
           ls -la "$PROJECT_DIR"
 
+    name: Build JJ Studio X APK
+
+on:
+  workflow_dispatch:
+
+  push:
+    paths:
+      - 'JJStudioX_MODERN_TRACKING_ANDROID.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extract and locate project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p project
+
+          unzip -q \
+            JJStudioX_MODERN_TRACKING_ANDROID.zip \
+            -d project
+
+          SETTINGS_FILE="$(find project -type f \
+            \( -name settings.gradle \
+            -o -name settings.gradle.kts \) \
+            -print -quit)"
+
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "ERROR: File settings.gradle(.kts) tidak ditemukan."
+            echo "Periksa struktur ZIP proyek Android."
+            exit 1
+          fi
+
+          PROJECT_DIR="$(dirname "$SETTINGS_FILE")"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+          echo "Project ditemukan di: $PROJECT_DIR"
+
+          ls -la "$PROJECT_DIR"
+
       - name: Build APK
         shell: bash
         working-directory: project
