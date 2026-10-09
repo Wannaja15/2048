@@ -59,17 +59,30 @@ jobs:
           fi
 
           PROJECT_DIR="$(dirname "$SETTINGS_FILE")"
-
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-          echo "Project ditemukan: $PROJECT_DIR"
-          ls -la "$PROJECT_DIR"
+          echo "Project: $PROJECT_DIR"
+
+      - name: Enable AndroidX
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+
+          touch gradle.properties
+
+          if grep -q '^android.useAndroidX=' gradle.properties; then
+            sed -i 's/^android.useAndroidX=.*/android.useAndroidX=true/' gradle.properties
+          else
+            echo 'android.useAndroidX=true' >> gradle.properties
+          fi
+
+          echo "AndroidX enabled."
 
       - name: Build APK
         shell: bash
         run: |
           set -euo pipefail
-
           cd "$PROJECT_DIR"
 
           if [ -f gradlew ]; then
